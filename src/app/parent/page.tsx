@@ -57,7 +57,7 @@ export default function ParentDashboard() {
       const demoCode = localStorage.getItem("familyDemoCode");
 
       if (!demoCode) {
-        router.push("/parent/setup");
+        router.push("/setup");
         return;
       }
 
@@ -72,7 +72,7 @@ export default function ParentDashboard() {
         setFamily(family);
       } catch (error) {
         console.error("Error loading family:", error);
-        router.push("/parent/setup");
+        router.push("/setup");
       } finally {
         setLoading(false);
       }
