@@ -1,34 +1,47 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Heart } from "lucide-react";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Family name is required"),
+  parentName: z.string().min(1, "Your name is required"),
+});
 
 export default function FamilySetup() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    name: "",
-    parentName: "",
+
+  useEffect(() => {
+    const existingCode = localStorage.getItem("familyDemoCode");
+    if (existingCode) {
+      router.push("/parent");
+    }
+  }, [router]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      parentName: "",
+    },
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const response = await fetch("/api/family", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(values),
       });
 
       if (!response.ok) {
@@ -42,9 +55,9 @@ export default function FamilySetup() {
 
       router.push("/parent");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
+      form.setError("root", {
+        message: err instanceof Error ? err.message : "Something went wrong",
+      });
     }
   };
 
@@ -59,46 +72,52 @@ export default function FamilySetup() {
           <CardDescription>Set up your family to get started</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="familyName">Family Name</Label>
-              <Input
-                type="text"
-                id="familyName"
-                required
-                placeholder="The Smith Family"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Family Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="The Smith Family" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="parentName">Your Name</Label>
-              <Input
-                type="text"
-                id="parentName"
-                required
-                placeholder="John Smith"
-                value={formData.parentName}
-                onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+              <FormField
+                control={form.control}
+                name="parentName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            {error && (
-              <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+              {form.formState.errors.root && (
+                <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? "Creating..." : "Create Family"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="w-full"
+                size="lg"
+              >
+                {form.formState.isSubmitting ? "Creating Family..." : "Create Family"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
