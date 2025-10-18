@@ -1,12 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import CreateSampleDataButton from './CreateSampleDataButton'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import { Heart, DollarSign, Trophy } from 'lucide-react'
+import { calculateAge } from '@/lib/utils'
 
 type Child = {
   id: string
   name: string
-  age: number
+  birthdate: string
   balance: number
   dailyBrushGoal: number
   priceIncrease: number
@@ -38,182 +48,286 @@ type Child = {
   }>
 }
 
+const loginSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  familyCode: z.string().min(1, "Family code is required"),
+})
+
 export default function ChildPage() {
   const [child, setChild] = useState<Child | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isChecking, setIsChecking] = useState(true)
 
-  const loadChildData = async () => {
-    setLoading(true)
-    setError(null)
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      name: "",
+      familyCode: "",
+    },
+  })
+
+  // Check localStorage on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem("childName")
+    const savedFamilyCode = localStorage.getItem("childFamilyCode")
+
+    if (savedName && savedFamilyCode) {
+      loadChildData(savedName, savedFamilyCode)
+    } else {
+      setIsChecking(false)
+    }
+  }, [])
+
+  const loadChildData = async (name: string, familyCode: string) => {
     try {
-      // Try to get child data using the test child ID
-      const response = await fetch('/api/child?childId=test-child-id')
-      
+      const response = await fetch(`/api/child?childName=${encodeURIComponent(name)}&familyCode=${encodeURIComponent(familyCode)}`)
+
       if (response.ok) {
         const { child: childData } = await response.json()
         setChild(childData)
-      } else if (response.status === 404) {
-        // Child not found, will show empty state
-        setChild(null)
+        setIsLoggedIn(true)
+        // Save to localStorage
+        localStorage.setItem("childName", name)
+        localStorage.setItem("childFamilyCode", familyCode)
       } else {
-        throw new Error('Failed to load child data')
+        throw new Error('Child not found')
       }
     } catch (error) {
-      console.error('Error loading child data:', error)
-      setError('Failed to load child data')
+      form.setError("root", {
+        message: error instanceof Error ? error.message : "Failed to find child",
+      })
     } finally {
-      setLoading(false)
+      setIsChecking(false)
     }
   }
 
-  useEffect(() => {
-    loadChildData()
-  }, [])
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    await loadChildData(values.name, values.familyCode)
+  }
 
-  if (loading) {
+  const handleLogout = () => {
+    localStorage.removeItem("childName")
+    localStorage.removeItem("childFamilyCode")
+    setChild(null)
+    setIsLoggedIn(false)
+    form.reset()
+  }
+
+  // Show loading while checking localStorage
+  if (isChecking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <p className="text-xl text-gray-600">Loading your teeth collection...</p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-lg text-muted-foreground">Loading...</div>
       </div>
     )
   }
 
-  if (error) {
+  // Login screen
+  if (!isLoggedIn || !child) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <p className="text-xl text-red-600 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Heart className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-3xl">Welcome!</CardTitle>
+            <CardDescription>Enter your name and family code to see your teeth</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="familyCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Family Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter family code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.formState.errors.root && (
+                  <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+                    {form.formState.errors.root.message}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                  className="w-full"
+                  size="lg"
+                >
+                  {form.formState.isSubmitting ? "Loading..." : "View My Teeth"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  if (!child) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 p-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-center text-purple-800 mb-8">
-            Welcome to the Tooth Fairy Protocol
-          </h1>
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <p className="text-xl text-gray-600 mb-4">
-              No child data found. Let's create some sample teeth to get started!
-            </p>
-            <CreateSampleDataButton onDataCreated={loadChildData} />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const totalValue = child.teeth.reduce((sum, tooth) => sum + tooth.valueAtLoss, 0)
+  const paidTeeth = child.teeth.filter(tooth => tooth.paid).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-left">
-              <p className="text-sm text-purple-600">Family: {child.family.name}</p>
-              <p className="text-xs text-gray-500">Code: {child.family.demoCode}</p>
-            </div>
-            <button 
-              onClick={loadChildData}
-              className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full text-sm transition-colors"
-            >
-              Refresh
-            </button>
-          </div>
-          <h1 className="text-4xl font-bold text-purple-800 mb-2">
-            {child.name}'s Teeth Collection
-          </h1>
-          <p className="text-lg text-purple-600">
-            Age: {child.age} • Balance: ${child.balance.toFixed(2)}
-          </p>
-        </div>
-
-        {/* Teeth Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {child.teeth.map((tooth, index) => (
-            <div 
-              key={tooth.id}
-              className="bg-white rounded-xl shadow-lg p-4 text-center hover:shadow-xl transition-shadow"
-            >
-              <div className="text-4xl mb-2">
-                {tooth.paid ? '✓' : '○'}
-              </div>
-              <h3 className="font-bold text-lg text-gray-800">
-                Tooth #{index + 1}
-              </h3>
-              <p className="text-sm text-gray-600 mb-2">
-                {tooth.toothType}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{child.name}'s Teeth</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Age {calculateAge(child.birthdate)} • Balance: ${child.balance.toFixed(2)}
               </p>
-              <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                tooth.paid 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {tooth.paid ? 'Paid' : '$' + tooth.valueAtLoss.toFixed(2)}
-              </div>
-              {tooth.paid && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Paid on {new Date(tooth.paidAt!).toLocaleDateString()}
-                </p>
-              )}
             </div>
-          ))}
+            <div className="text-right space-y-1">
+              <p className="text-xs text-muted-foreground">Family: {child.family.name}</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs font-mono">{child.family.demoCode}</Badge>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Teeth</CardTitle>
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{child.teeth.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">${totalValue.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Paid Teeth</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{paidTeeth}</div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">Teeth</div>
-            <h3 className="font-bold text-xl text-gray-800">Total Teeth</h3>
-            <p className="text-3xl font-bold text-purple-600">{child.teeth.length}</p>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">Value</div>
-            <h3 className="font-bold text-xl text-gray-800">Total Value</h3>
-            <p className="text-3xl font-bold text-green-600">
-              ${child.teeth.reduce((sum, tooth) => sum + tooth.valueAtLoss, 0).toFixed(2)}
-            </p>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">Paid</div>
-            <h3 className="font-bold text-xl text-gray-800">Paid Teeth</h3>
-            <p className="text-3xl font-bold text-blue-600">
-              {child.teeth.filter(tooth => tooth.paid).length}
-            </p>
-          </div>
-        </div>
+        {/* Teeth Collection */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Teeth Collection</CardTitle>
+            <CardDescription>Track all your lost teeth and their values</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {child.teeth.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No teeth yet!</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {child.teeth.map((tooth, index) => (
+                  <div
+                    key={tooth.id}
+                    className="p-4 border rounded-lg text-center space-y-2"
+                  >
+                    <div className="text-3xl">
+                      {tooth.paid ? '✓' : '🦷'}
+                    </div>
+                    <h3 className="font-semibold">Tooth #{index + 1}</h3>
+                    <p className="text-sm text-muted-foreground">{tooth.toothType}</p>
+                    <Badge variant={tooth.paid ? "default" : "secondary"}>
+                      {tooth.paid ? 'Paid' : `$${tooth.valueAtLoss.toFixed(2)}`}
+                    </Badge>
+                    {tooth.paid && tooth.paidAt && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(tooth.paidAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Current Tooth Value */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6 text-center">
-          <h3 className="font-bold text-2xl text-gray-800 mb-2">
-            Current Tooth Value
-          </h3>
-          <p className="text-4xl font-bold text-pink-600">
-            ${child.currentToothValue.toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Each new tooth starts at this value and increases by ${child.priceIncrease.toFixed(2)} each time!
-          </p>
-        </div>
-      </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Tooth Value</CardTitle>
+            <CardDescription>
+              Each new tooth starts at this value and increases by ${child.priceIncrease.toFixed(2)} when you meet your daily goal!
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-green-600">
+                ${child.currentToothValue.toFixed(2)}
+              </div>
+              <Separator className="my-4" />
+              <div className="text-sm text-muted-foreground">
+                <p>Daily Brush Goal: {child.dailyBrushGoal}x per day</p>
+                <p className="mt-1">Keep brushing to increase your tooth value!</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Transactions */}
+        {child.transactions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest transactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {child.transactions.slice(0, 5).map((transaction) => (
+                  <div key={transaction.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{transaction.description}</span>
+                    <span className={`font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {transaction.amount >= 0 ? '+' : ''}${transaction.amount.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </main>
     </div>
   )
 }
