@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev",
+    "db:studio": "npx prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
