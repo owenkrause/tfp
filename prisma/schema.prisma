@@ -13,3 +13,87 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Family {
+  id          String   @id @default(cuid())
+  name        String
+  demoCode    String   @unique
+  parentName  String
+  createdAt   DateTime @default(now())
+  
+  children    Child[]
+  
+  @@map("families")
+}
+
+model Child {
+  id              String   @id @default(cuid())
+  familyId        String
+  family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  
+  name            String
+  age             Int
+  balance         Float    @default(0)
+  
+  dailyBrushGoal  Int      @default(2)
+  priceIncrease   Float    @default(0.05)
+  
+  currentToothValue Float  @default(1.00)
+  
+  createdAt       DateTime @default(now())
+  
+  brushSessions   BrushSession[]
+  teeth           Tooth[]
+  transactions      Transaction[]
+  
+  @@map("children")
+}
+
+model BrushSession {
+  id              String    @id @default(cuid())
+  childId         String
+  child           Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  
+  timestamp       DateTime  @default(now())
+  photoUrl        String?
+  
+  verified        Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  
+  @@map("brush_sessions")
+}
+
+model Tooth {
+  id              String    @id @default(cuid())
+  childId         String
+  child           Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  
+  toothType       String
+  lostDate        DateTime  @default(now())
+  
+  valueAtLoss     Float
+  paid            Boolean   @default(false)
+  paidAt          DateTime?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@map("teeth")
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  childId         String
+  child           Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  
+  amount          Float
+  description     String
+  
+  toothId         String?
+  
+  status          String    @default("completed")
+  
+  createdAt       DateTime  @default(now())
+  
+  @@map("transactions")
+}
