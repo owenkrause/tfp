@@ -29,22 +29,22 @@ model Child {
   id              String   @id @default(cuid())
   familyId        String
   family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  
+
   name            String
-  age             Int
+  birthdate       DateTime
   balance         Float    @default(0)
-  
+
   dailyBrushGoal  Int      @default(2)
   priceIncrease   Float    @default(0.05)
-  
+
   currentToothValue Float  @default(1.00)
-  
+
   createdAt       DateTime @default(now())
-  
+
   brushSessions   BrushSession[]
   teeth           Tooth[]
   transactions      Transaction[]
-  
+
   @@map("children")
 }
 

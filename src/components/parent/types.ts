@@ -1,7 +1,7 @@
 export type Child = {
   id: string;
   name: string;
-  age: number;
+  birthdate: string;
   balance: number;
   dailyBrushGoal: number;
   priceIncrease: number;

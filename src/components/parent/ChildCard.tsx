@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { calculateAge } from "@/lib/utils";
 import { Child, Family } from "./types";
 
 const editChildSchema = z.object({
@@ -62,7 +63,7 @@ export function ChildCard({ child, family, setFamily }: { child: Child; family: 
         <div className="flex justify-between items-start">
           <div>
             <CardTitle>{child.name}</CardTitle>
-            <CardDescription>Age {child.age}</CardDescription>
+            <CardDescription>Age {calculateAge(child.birthdate)}</CardDescription>
           </div>
           <Button
             variant="ghost"

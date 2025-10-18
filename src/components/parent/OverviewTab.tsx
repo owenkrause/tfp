@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { DollarSign, Users, Heart } from "lucide-react";
+import { calculateAge } from "@/lib/utils";
 import { Family } from "./types";
 
 export function OverviewTab({ family, setFamily }: { family: Family; setFamily: (f: Family) => void }) {
@@ -121,7 +122,7 @@ export function OverviewTab({ family, setFamily }: { family: Family; setFamily: 
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-semibold">{child.name}</h3>
-                        <p className="text-sm text-muted-foreground">Age {child.age}</p>
+                        <p className="text-sm text-muted-foreground">Age {calculateAge(child.birthdate)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">Tooth Value</p>
