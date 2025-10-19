@@ -15,6 +15,7 @@
     "@google/genai": "^1.0.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.17.1",
+    "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-separator": "^1.1.7",
@@ -27,6 +28,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.546.0",
     "next": "15.5.6",
+    "node-jose": "^2.2.0",
     "react": "19.1.0",
     "react-day-picker": "^9.11.1",
     "react-dom": "19.1.0",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/node-jose": "^1.1.13",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "prisma": "^6.17.1",
