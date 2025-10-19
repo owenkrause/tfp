@@ -1,18 +1,16 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import Image from 'next/image'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Heart, LogOut } from 'lucide-react'
-import { calculateAge } from '@/lib/utils'
+import { useEffect, useState, useRef } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Heart } from "lucide-react"
 
 type Child = {
   id: string
@@ -56,35 +54,41 @@ const loginSchema = z.object({
 
 // Tooth positions mapped to the actual mouth image
 const toothPositions = [
-  // Upper teeth (right to left from child's perspective)
-  { index: 9, top: '44%', left: '30.5%', width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Right)
-  { index: 7, top: '43%', left: '33%', width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Right)
-  { index: 5, top: '42%', left: '36%', width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Right)
-  { index: 3, top: '41%', left: '40%', width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Right)
-  { index: 1, top: '41%', left: '46%', width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Right)
-  { index: 0, top: '41%', left: '54%', width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Left)
-  { index: 2, top: '41%', left: '60%', width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Left)
-  { index: 4, top: '42%', left: '64%', width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Left)
-  { index: 6, top: '43%', left: '67%', width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Left)
-  { index: 8, top: '44%', left: '69.5%', width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Left)
+  // Upper teeth (right to left from child"s perspective)
+  { index: 9, top: "44%", left: "30.5%", width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Right)
+  { index: 7, top: "43%", left: "33%", width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Right)
+  { index: 5, top: "42%", left: "36%", width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Right)
+  { index: 3, top: "41%", left: "40%", width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Right)
+  { index: 1, top: "41%", left: "46%", width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Right)
+  { index: 0, top: "41%", left: "54%", width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Left)
+  { index: 2, top: "41%", left: "60%", width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Left)
+  { index: 4, top: "42%", left: "64%", width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Left)
+  { index: 6, top: "43%", left: "67%", width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Left)
+  { index: 8, top: "44%", left: "69.5%", width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Left)
 
-  // Lower teeth (right to left from child's perspective)
-  { index: 19, top: '51%', left: '32%', width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Right)
-  { index: 17, top: '52%', left: '35%', width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Right)
-  { index: 15, top: '54%', left: '38%', width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Right)
-  { index: 13, top: '55%', left: '42.5%', width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Right)
-  { index: 11, top: '55%', left: '47.5%', width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Right)
-  { index: 10, top: '55%', left: '52.5%', width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Left)
-  { index: 12, top: '55%', left: '57.5%', width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Left)
-  { index: 14, top: '54%', left: '62%', width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Left)
-  { index: 16, top: '52%', left: '65%', width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Left)
-  { index: 18, top: '51%', left: '68%', width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Left)
+  // Lower teeth (right to left from child"s perspective)
+  { index: 19, top: "51%", left: "32%", width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Right)
+  { index: 17, top: "52%", left: "35%", width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Right)
+  { index: 15, top: "54%", left: "38%", width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Right)
+  { index: 13, top: "55%", left: "42.5%", width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Right)
+  { index: 11, top: "55%", left: "47.5%", width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Right)
+  { index: 10, top: "55%", left: "52.5%", width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Left)
+  { index: 12, top: "55%", left: "57.5%", width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Left)
+  { index: 14, top: "54%", left: "62%", width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Left)
+  { index: 16, top: "52%", left: "65%", width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Left)
+  { index: 18, top: "51%", left: "68%", width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Left)
 ]
 
 export default function ChildPage() {
   const [child, setChild] = useState<Child | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
+  const [showCamera, setShowCamera] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationResult, setVerificationResult] = useState<{ verified: boolean; reason: string } | null>(null)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -117,7 +121,7 @@ export default function ChildPage() {
         localStorage.setItem("childName", name)
         localStorage.setItem("childFamilyCode", familyCode)
       } else {
-        throw new Error('Child not found')
+        throw new Error("Child not found")
       }
     } catch (error) {
       form.setError("root", {
@@ -132,15 +136,83 @@ export default function ChildPage() {
     await loadChildData(values.name, values.familyCode)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("childName")
-    localStorage.removeItem("childFamilyCode")
-    setChild(null)
-    setIsLoggedIn(false)
-    form.reset()
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      })
+      setStream(mediaStream)
+      setShowCamera(true)
+    } catch (error) {
+      console.error("Camera access denied:", error)
+      alert("Camera access is required to verify brushing. Please enable camera permissions.")
+    }
   }
 
-  // Show loading while checking localStorage
+  useEffect(() => {
+    if (showCamera && stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+    }
+  }, [showCamera, stream])
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    setShowCamera(false)
+  }
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    ctx.drawImage(video, 0, 0)
+    const base64Image = canvas.toDataURL("image/jpeg")
+
+    stopCamera()
+    await verifyImage(base64Image)
+  }
+
+  const verifyImage = async (base64Image: string) => {
+    setIsVerifying(true)
+    setVerificationResult(null)
+
+    try {
+      const response = await fetch("/api/verify-brush", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64Image,
+          childId: child?.id
+        }),
+      })
+
+      const result = await response.json()
+      setVerificationResult(result)
+    } catch (error) {
+      console.error("Verification error:", error)
+      setVerificationResult({
+        verified: false,
+        reason: "Failed to verify image"
+      })
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
   if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -149,7 +221,6 @@ export default function ChildPage() {
     )
   }
 
-  // Login screen
   if (!isLoggedIn || !child) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -214,8 +285,6 @@ export default function ChildPage() {
     )
   }
 
-  const paidTeeth = child.teeth.filter(tooth => tooth.paid).length
-
   return (
     <div className="min-h-screen relative">
       {/* Background Image */}
@@ -233,10 +302,9 @@ export default function ChildPage() {
         <div className="relative flex items-center justify-center w-full">
           {/* Brush Teeth Button - positioned to the left of center */}
           <button
-            onClick={() => {
-              // Functionality will be added later
-            }}
+            onClick={startCamera}
             className="absolute left-1/8 transition-transform hover:scale-105"
+            disabled={isVerifying || showCamera}
           >
             <Image
               src="/brush.png"
@@ -246,6 +314,52 @@ export default function ChildPage() {
               className="w-56 h-auto"
             />
           </button>
+
+          {/* Verification Status */}
+          {isVerifying && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-xl shadow-lg border border-gray-200/50">
+              <p className="text-sm font-medium">Verifying your brush session...</p>
+            </div>
+          )}
+
+          {verificationResult && (
+            <div className={`absolute top-4 left-1/2 -translate-x-1/2 backdrop-blur-md px-6 py-3 rounded-xl shadow-lg border border-gray-200/50 ${
+              verificationResult.verified ? "bg-green-100/90" : "bg-red-100/90"
+            }`}>
+              <p className="text-sm font-semibold">{verificationResult.verified ? "✓ Great job brushing!" : "✗ Unable to verify"}</p>
+              <p className="text-xs text-muted-foreground mt-1">{verificationResult.reason}</p>
+            </div>
+          )}
+
+          {/* Camera Modal */}
+          {showCamera && (
+            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+                <div className="space-y-4">
+                  <h2 className="text-2xl font-bold text-center">Show us your smile while brushing! 😁</h2>
+                  <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button onClick={capturePhoto} className="flex-1" size="lg">
+                      📸 Take Photo
+                    </Button>
+                    <Button onClick={stopCamera} variant="outline" className="flex-1" size="lg">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden canvas for photo capture */}
+          <canvas ref={canvasRef} className="hidden" />
 
           {/* Mouth Diagram - centered */}
           <div className="w-full max-w-2xl mx-auto">
@@ -280,8 +394,8 @@ export default function ChildPage() {
                           <div
                             className="absolute inset-0 opacity-0 group-hover:opacity-60 transition-opacity duration-200"
                             style={{
-                              backgroundColor: '#ffffff',
-                              boxShadow: '0 0 20px 2px rgba(251, 191, 36, 0.6)',
+                              backgroundColor: "#ffffff",
+                              boxShadow: "0 0 20px 2px rgba(251, 191, 36, 0.6)",
                               borderRadius: `${pos.borderRadius}px`,
                             }}
                           />
