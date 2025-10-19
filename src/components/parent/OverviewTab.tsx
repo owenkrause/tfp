@@ -5,16 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DollarSign, Users, Heart } from "lucide-react";
 import { calculateAge } from "@/lib/utils";
 import { Family } from "./types";
 
 export function OverviewTab({ family, setFamily }: { family: Family; setFamily: (f: Family) => void }) {
-  const [recipientCard, setRecipientCard] = useState("");
-  const [showCardInput, setShowCardInput] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
+  const [loadingToothId, setLoadingToothId] = useState<string | null>(null);
 
   if (!family || !family.children) {
     return null;
@@ -89,112 +86,47 @@ export function OverviewTab({ family, setFamily }: { family: Family; setFamily: 
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
                       {child.unpaidTeeth.map((tooth) => (
-                        <div key={tooth.id} className="p-4 border rounded-lg space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{tooth.toothType}</p>
-                              <p className="text-xs text-muted-foreground">Lost on {new Date(tooth.lostDate).toLocaleDateString()}</p>
+                        <div key={tooth.id} className="p-4 border rounded-lg space-y-3 flex flex-col">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="text-lg">🦷</p>
+                              <p className="text-lg font-bold text-green-600">${tooth.valueAtLoss.toFixed(2)}</p>
                             </div>
-                            <p className="text-lg font-bold text-green-600">${tooth.valueAtLoss.toFixed(2)}</p>
+                            <p className="font-medium text-sm leading-tight">{tooth.toothType}</p>
+                            <p className="text-xs text-muted-foreground">Lost on {new Date(tooth.lostDate).toLocaleDateString()}</p>
                           </div>
 
-                          {showCardInput === tooth.id ? (
-                            <div className="space-y-2">
-                              <Input
-                                placeholder="Recipient card number"
-                                value={recipientCard}
-                                onChange={(e) => setRecipientCard(e.target.value)}
-                                className="text-sm"
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  disabled={isSending}
-                                  onClick={async () => {
-                                    setIsSending(true);
-                                    try {
-                                      const response = await fetch("/api/pay-visa-direct", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                          toothId: tooth.id,
-                                          childId: child.id,
-                                          recipientCardNumber: recipientCard,
-                                        }),
-                                      });
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            disabled={loadingToothId === tooth.id}
+                            onClick={async () => {
+                              setLoadingToothId(tooth.id);
+                              try {
+                                const response = await fetch("/api/create-checkout", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ toothId: tooth.id, childId: child.id }),
+                                });
 
-                                      if (response.ok) {
-                                        const demoCode = localStorage.getItem("familyDemoCode");
-                                        const familyResponse = await fetch(`/api/family?demoCode=${demoCode}`);
-                                        const { family: updatedFamily } = await familyResponse.json();
-                                        setFamily(updatedFamily);
-                                        setShowCardInput(null);
-                                        setRecipientCard("");
-                                        alert("Payment sent via Visa Direct!");
-                                      } else {
-                                        const error = await response.json();
-                                        alert(`Payment failed: ${error.details || error.error}`);
-                                      }
-                                    } catch (error) {
-                                      console.error("Error:", error);
-                                      alert("Payment failed");
-                                    } finally {
-                                      setIsSending(false);
-                                    }
-                                  }}
-                                >
-                                  {isSending ? "Sending..." : "Send"}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setShowCardInput(null);
-                                    setRecipientCard("");
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="flex-1"
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch("/api/purchase", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ toothId: tooth.id, childId: child.id }),
-                                    });
-
-                                    if (response.ok) {
-                                      const demoCode = localStorage.getItem("familyDemoCode");
-                                      const familyResponse = await fetch(`/api/family?demoCode=${demoCode}`);
-                                      const { family: updatedFamily } = await familyResponse.json();
-                                      setFamily(updatedFamily);
-                                    }
-                                  } catch (error) {
-                                    console.error("Error purchasing tooth:", error);
-                                  }
-                                }}
-                              >
-                                Mark Paid
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => setShowCardInput(tooth.id)}
-                              >
-                                Pay via Visa
-                              </Button>
-                            </div>
-                          )}
+                                if (response.ok) {
+                                  const { url } = await response.json();
+                                  window.location.href = url;
+                                } else {
+                                  alert("Failed to create checkout session");
+                                  setLoadingToothId(null);
+                                }
+                              } catch (error) {
+                                console.error("Error creating checkout:", error);
+                                alert("Failed to create checkout session");
+                                setLoadingToothId(null);
+                              }
+                            }}
+                          >
+                            {loadingToothId === tooth.id ? "Loading..." : "Pay with Card"}
+                          </Button>
                         </div>
                       ))}
                     </div>
