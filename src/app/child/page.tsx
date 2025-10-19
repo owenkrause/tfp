@@ -363,37 +363,43 @@ export default function ChildPage() {
 
           {/* Camera Modal */}
           {showCamera && (
-            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-              <div className="bg-transparent p-6 max-w-2xl w-full">
-                <div className="space-y-4">
-                  <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover scale-x-[-1]"
-                    />
-                    {/* Camera Border Overlay */}
-                    <div className="absolute inset-0 pointer-events-none z-10">
-                      <Image
-                        src="/camera_border.png"
-                        alt="Camera Border"
-                        fill
-                        className="object-contain scale-125"
+            <>
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                <div className="bg-transparent p-6 max-w-2xl w-full">
+                  <div className="space-y-4">
+                    <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover scale-x-[-1]"
                       />
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button onClick={capturePhoto} className="flex-1" size="lg">
-                      📸 Take Photo
-                    </Button>
-                    <Button onClick={stopCamera} variant="outline" className="flex-1" size="lg">
-                      Cancel
-                    </Button>
+                    <div className="flex gap-3 mt-32">
+                      <Button onClick={capturePhoto} className="flex-1 h-12 text-lg bg-white/90 hover:bg-white text-black font-medium" size="lg">
+                        📸 Take Photo
+                      </Button>
+                      <Button onClick={stopCamera} variant="outline" className="flex-1 h-12 text-lg bg-white/90 hover:bg-white text-black font-medium" size="lg">
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+              {/* Camera Border Overlay - Separate from modal structure */}
+              <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[60] -translate-y-24">
+                <div className="w-full max-w-3xl scale-110">
+                  <Image
+                    src="/camera_border.png"
+                    alt="Camera Border"
+                    width={1920}
+                    height={1080}
+                    priority
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           {/* Hidden canvas for photo capture */}
