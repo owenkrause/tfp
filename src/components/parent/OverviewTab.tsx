@@ -1,14 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DollarSign, Users, Heart } from "lucide-react";
 import { calculateAge } from "@/lib/utils";
 import { Family } from "./types";
 
 export function OverviewTab({ family, setFamily }: { family: Family; setFamily: (f: Family) => void }) {
+  const [loadingToothId, setLoadingToothId] = useState<string | null>(null);
+
+  if (!family || !family.children) {
+    return null;
+  }
+
   const unpaidTeeth = family.children.flatMap(child =>
     child.teeth.filter(tooth => !tooth.paid).map(tooth => ({
       ...tooth,
@@ -16,6 +24,14 @@ export function OverviewTab({ family, setFamily }: { family: Family; setFamily: 
       childId: child.id,
     }))
   );
+
+  // Group unpaid teeth by child
+  const childrenWithUnpaidTeeth = family.children
+    .map(child => ({
+      ...child,
+      unpaidTeeth: child.teeth.filter(tooth => !tooth.paid)
+    }))
+    .filter(child => child.unpaidTeeth.length > 0);
 
   const totalOwed = unpaidTeeth.reduce((sum, tooth) => sum + tooth.valueAtLoss, 0);
 
@@ -53,50 +69,71 @@ export function OverviewTab({ family, setFamily }: { family: Family; setFamily: 
       </div>
 
       {/* Unpaid Teeth */}
-      {unpaidTeeth.length > 0 && (
+      {childrenWithUnpaidTeeth.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Teeth Ready for Payment</CardTitle>
             <CardDescription>Process payments for lost teeth</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {unpaidTeeth.map((tooth) => (
-                <div key={tooth.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{tooth.childName}</p>
-                    <p className="text-sm text-muted-foreground">{tooth.toothType}</p>
-                    <p className="text-xs text-muted-foreground">Lost on {new Date(tooth.lostDate).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right space-y-2">
-                    <p className="text-lg font-bold text-green-600">${tooth.valueAtLoss.toFixed(2)}</p>
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch("/api/purchase", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ toothId: tooth.id, childId: tooth.childId }),
-                          });
+            <Accordion type="multiple" className="w-full">
+              {childrenWithUnpaidTeeth.map((child) => (
+                <AccordionItem key={child.id} value={child.id}>
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <span className="font-medium">{child.name}</span>
+                      <Badge variant="secondary">{child.unpaidTeeth.length} teeth</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                      {child.unpaidTeeth.map((tooth) => (
+                        <div key={tooth.id} className="p-4 border rounded-lg space-y-3 flex flex-col">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="text-lg">🦷</p>
+                              <p className="text-lg font-bold text-green-600">${tooth.valueAtLoss.toFixed(2)}</p>
+                            </div>
+                            <p className="font-medium text-sm leading-tight">{tooth.toothType}</p>
+                            <p className="text-xs text-muted-foreground">Lost on {new Date(tooth.lostDate).toLocaleDateString()}</p>
+                          </div>
 
-                          if (response.ok) {
-                            const demoCode = localStorage.getItem("familyDemoCode");
-                            const familyResponse = await fetch(`/api/family?demoCode=${demoCode}`);
-                            const { family: updatedFamily } = await familyResponse.json();
-                            setFamily(updatedFamily);
-                          }
-                        } catch (error) {
-                          console.error("Error purchasing tooth:", error);
-                        }
-                      }}
-                    >
-                      Pay Now
-                    </Button>
-                  </div>
-                </div>
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            disabled={loadingToothId === tooth.id}
+                            onClick={async () => {
+                              setLoadingToothId(tooth.id);
+                              try {
+                                const response = await fetch("/api/create-checkout", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ toothId: tooth.id, childId: child.id }),
+                                });
+
+                                if (response.ok) {
+                                  const { url } = await response.json();
+                                  window.location.href = url;
+                                } else {
+                                  alert("Failed to create checkout session");
+                                  setLoadingToothId(null);
+                                }
+                              } catch (error) {
+                                console.error("Error creating checkout:", error);
+                                alert("Failed to create checkout session");
+                                setLoadingToothId(null);
+                              }
+                            }}
+                          >
+                            {loadingToothId === tooth.id ? "Loading..." : "Pay with Card"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </CardContent>
         </Card>
       )}
