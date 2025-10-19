@@ -364,9 +364,8 @@ export default function ChildPage() {
           {/* Camera Modal */}
           {showCamera && (
             <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+              <div className="bg-transparent p-6 max-w-2xl w-full">
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-center">Show us your smile while brushing! 😁</h2>
                   <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
                     <video
                       ref={videoRef}
@@ -374,6 +373,15 @@ export default function ChildPage() {
                       playsInline
                       className="w-full h-full object-cover scale-x-[-1]"
                     />
+                    {/* Camera Border Overlay */}
+                    <div className="absolute inset-0 pointer-events-none z-10">
+                      <Image
+                        src="/camera_border.png"
+                        alt="Camera Border"
+                        fill
+                        className="object-contain scale-125"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <Button onClick={capturePhoto} className="flex-1" size="lg">
