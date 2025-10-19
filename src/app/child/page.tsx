@@ -223,26 +223,33 @@ export default function ChildPage() {
 
   if (!isLoggedIn || !child) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-              <Heart className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-3xl">Welcome!</CardTitle>
-            <CardDescription>Enter your name and family code to see your teeth</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center p-4">
+        <div className="relative">
+          {/* Popup Login Background Image */}
+          <Image
+            src="/pop_up_login.png"
+            alt="Login Popup"
+            width={1800}
+            height={1918}
+            className="w-auto h-auto"
+          />
+          
+          {/* Form positioned over the image */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-12 pt-40">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-52">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your Name</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-left text-sm font-semibold text-gray-800 block">Your Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your name" {...field} />
+                        <Input 
+                          placeholder="Enter your name" 
+                          {...field} 
+                          className="bg-white/20 border border-gray-300/30 rounded-lg text-center text-sm font-medium placeholder:text-gray-500 h-10 px-4 focus:bg-white/30 focus:border-purple-400/50 transition-all duration-200"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -253,10 +260,14 @@ export default function ChildPage() {
                   control={form.control}
                   name="familyCode"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Family Code</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-left text-sm font-semibold text-gray-800 block">Family Code</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter family code" {...field} />
+                        <Input 
+                          placeholder="Enter family code" 
+                          {...field} 
+                          className="bg-white/20 border border-gray-300/30 rounded-lg text-center text-sm font-medium placeholder:text-gray-500 h-10 px-4 focus:bg-white/30 focus:border-purple-400/50 transition-all duration-200"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -264,23 +275,31 @@ export default function ChildPage() {
                 />
 
                 {form.formState.errors.root && (
-                  <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+                  <div className="bg-red-100/90 text-red-700 p-3 rounded-lg text-sm text-center border border-red-200/50 shadow-sm">
                     {form.formState.errors.root.message}
                   </div>
                 )}
 
-                <Button
-                  type="submit"
-                  disabled={form.formState.isSubmitting}
-                  className="w-full"
-                  size="lg"
-                >
-                  {form.formState.isSubmitting ? "Loading..." : "View My Teeth"}
-                </Button>
+                {/* Enter Button Image */}
+                <div className="flex justify-center mt-3">
+                  <button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    className="hover:scale-110 transition-all duration-300 hover:drop-shadow-lg"
+                  >
+                    <Image
+                      src="/enter_button.png"
+                      alt="Enter"
+                      width={130}
+                      height={45}
+                      className="w-auto h-auto"
+                    />
+                  </button>
+                </div>
               </form>
             </Form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     )
   }
@@ -315,6 +334,17 @@ export default function ChildPage() {
             />
           </button>
 
+          {/* Tooth Fairy - positioned to the right of center with floating animation */}
+          <div className="absolute right-1/8 animate-hover">
+            <Image
+              src="/toothfairy_transparent_mouthclosed.png"
+              alt="Tooth Fairy"
+              width={300}
+              height={300}
+              className="w-64 h-auto"
+            />
+          </div>
+
           {/* Verification Status */}
           {isVerifying && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-3 rounded-xl shadow-lg border border-gray-200/50">
@@ -334,9 +364,8 @@ export default function ChildPage() {
           {/* Camera Modal */}
           {showCamera && (
             <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+              <div className="bg-transparent p-6 max-w-2xl w-full">
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-center">Show us your smile while brushing! 😁</h2>
                   <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
                     <video
                       ref={videoRef}
@@ -344,6 +373,15 @@ export default function ChildPage() {
                       playsInline
                       className="w-full h-full object-cover scale-x-[-1]"
                     />
+                    {/* Camera Border Overlay */}
+                    <div className="absolute inset-0 pointer-events-none z-10">
+                      <Image
+                        src="/camera_border.png"
+                        alt="Camera Border"
+                        fill
+                        className="object-contain scale-125"
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <Button onClick={capturePhoto} className="flex-1" size="lg">

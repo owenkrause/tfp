@@ -119,3 +119,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes hover {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-hover {
+  animation: hover 4s ease-in-out infinite;
+}
