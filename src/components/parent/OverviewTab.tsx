@@ -16,6 +16,10 @@ export function OverviewTab({ family, setFamily }: { family: Family; setFamily: 
   const [showCardInput, setShowCardInput] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
 
+  if (!family || !family.children) {
+    return null;
+  }
+
   const unpaidTeeth = family.children.flatMap(child =>
     child.teeth.filter(tooth => !tooth.paid).map(tooth => ({
       ...tooth,

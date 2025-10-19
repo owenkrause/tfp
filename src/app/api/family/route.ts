@@ -21,6 +21,15 @@ export async function POST(req: Request) {
         parentName,
         demoCode,
       },
+      include: {
+        children: {
+          include: {
+            teeth: true,
+            brushSessions: true,
+            transactions: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ family });
