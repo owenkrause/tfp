@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { Heart, DollarSign, Trophy } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Heart, LogOut } from 'lucide-react'
 import { calculateAge } from '@/lib/utils'
 
 type Child = {
@@ -53,6 +54,33 @@ const loginSchema = z.object({
   familyCode: z.string().min(1, "Family code is required"),
 })
 
+// Tooth positions mapped to the actual mouth image
+const toothPositions = [
+  // Upper teeth (right to left from child's perspective)
+  { index: 9, top: '44%', left: '30.5%', width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Right)
+  { index: 7, top: '43%', left: '33%', width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Right)
+  { index: 5, top: '42%', left: '36%', width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Right)
+  { index: 3, top: '41%', left: '40%', width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Right)
+  { index: 1, top: '41%', left: '46%', width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Right)
+  { index: 0, top: '41%', left: '54%', width: 11, height: 13, borderRadius: 6 }, // Upper Central Incisor (Left)
+  { index: 2, top: '41%', left: '60%', width: 8, height: 13, borderRadius: 8 }, // Upper Lateral Incisor (Left)
+  { index: 4, top: '42%', left: '64%', width: 5, height: 11, borderRadius: 6 }, // Upper Canine (Left)
+  { index: 6, top: '43%', left: '67%', width: 4, height: 9, borderRadius: 4 }, // Upper First Molar (Left)
+  { index: 8, top: '44%', left: '69.5%', width: 4, height: 7, borderRadius: 4 }, // Upper Second Molar (Left)
+
+  // Lower teeth (right to left from child's perspective)
+  { index: 19, top: '51%', left: '32%', width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Right)
+  { index: 17, top: '52%', left: '35%', width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Right)
+  { index: 15, top: '54%', left: '38%', width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Right)
+  { index: 13, top: '55%', left: '42.5%', width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Right)
+  { index: 11, top: '55%', left: '47.5%', width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Right)
+  { index: 10, top: '55%', left: '52.5%', width: 8, height: 11, borderRadius: 6 }, // Lower Central Incisor (Left)
+  { index: 12, top: '55%', left: '57.5%', width: 6, height: 10, borderRadius: 4 }, // Lower Lateral Incisor (Left)
+  { index: 14, top: '54%', left: '62%', width: 6, height: 9, borderRadius: 6 }, // Lower Canine (Left)
+  { index: 16, top: '52%', left: '65%', width: 5, height: 8, borderRadius: 6 }, // Lower First Molar (Left)
+  { index: 18, top: '51%', left: '68%', width: 4, height: 8, borderRadius: 6 }, // Lower Second Molar (Left)
+]
+
 export default function ChildPage() {
   const [child, setChild] = useState<Child | null>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -66,7 +94,6 @@ export default function ChildPage() {
     },
   })
 
-  // Check localStorage on mount
   useEffect(() => {
     const savedName = localStorage.getItem("childName")
     const savedFamilyCode = localStorage.getItem("childFamilyCode")
@@ -86,7 +113,7 @@ export default function ChildPage() {
         const { child: childData } = await response.json()
         setChild(childData)
         setIsLoggedIn(true)
-        // Save to localStorage
+
         localStorage.setItem("childName", name)
         localStorage.setItem("childFamilyCode", familyCode)
       } else {
@@ -187,146 +214,93 @@ export default function ChildPage() {
     )
   }
 
-  const totalValue = child.teeth.reduce((sum, tooth) => sum + tooth.valueAtLoss, 0)
   const paidTeeth = child.teeth.filter(tooth => tooth.paid).length
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">{child.name}'s Teeth</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Age {calculateAge(child.birthdate)} • Balance: ${child.balance.toFixed(2)}
-              </p>
-            </div>
-            <div className="text-right space-y-1">
-              <p className="text-xs text-muted-foreground">Family: {child.family.name}</p>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs font-mono">{child.family.demoCode}</Badge>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  Logout
-                </Button>
-              </div>
+    <div className="min-h-screen relative">
+      {/* Background Image */}
+      <div className="fixed inset-0 -z-10">
+        <Image
+          src="/background.png"
+          alt="Background"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
+
+      <main className="flex items-center justify-center min-h-screen px-4">
+        <div className="relative flex items-center justify-center w-full">
+          {/* Brush Teeth Button - positioned to the left of center */}
+          <button
+            onClick={() => {
+              // Functionality will be added later
+            }}
+            className="absolute left-1/8 transition-transform hover:scale-105"
+          >
+            <Image
+              src="/brush.png"
+              alt="Brush My Teeth"
+              width={300}
+              height={300}
+              className="w-56 h-auto"
+            />
+          </button>
+
+          {/* Mouth Diagram - centered */}
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="relative w-full aspect-[4/3]">
+              <Image
+                src="/mouth.png"
+                alt="Mouth diagram"
+                fill
+                className="object-contain"
+                priority
+              />
+
+              <TooltipProvider>
+                {toothPositions.map((pos) => {
+                  const tooth = child.teeth[pos.index]
+                  if (!tooth) return null
+
+                  return (
+                    <Tooltip key={tooth.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary group"
+                          style={{
+                            top: pos.top,
+                            left: pos.left,
+                            width: `${pos.width * 4}px`,
+                            height: `${pos.height * 4}px`,
+                            borderRadius: `${pos.borderRadius}px`,
+                          }}
+                        >
+                          <span className="sr-only">{tooth.toothType}</span>
+                          <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-60 transition-opacity duration-200"
+                            style={{
+                              backgroundColor: '#ffffff',
+                              boxShadow: '0 0 20px 2px rgba(251, 191, 36, 0.6)',
+                              borderRadius: `${pos.borderRadius}px`,
+                            }}
+                          />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <div className="space-y-1">
+                          <p className="font-semibold">{tooth.toothType}</p>
+                          <p className="text-sm">Value: ${tooth.valueAtLoss.toFixed(2)}</p>
+                          {tooth.paid && <p className="text-sm">✓ Lost</p> }
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                })}
+              </TooltipProvider>
             </div>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Teeth</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{child.teeth.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalValue.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Paid Teeth</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{paidTeeth}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Teeth Collection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Teeth Collection</CardTitle>
-            <CardDescription>Track all your lost teeth and their values</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {child.teeth.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No teeth yet!</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {child.teeth.map((tooth, index) => (
-                  <div
-                    key={tooth.id}
-                    className="p-4 border rounded-lg text-center space-y-2"
-                  >
-                    <div className="text-3xl">
-                      {tooth.paid ? '✓' : '🦷'}
-                    </div>
-                    <h3 className="font-semibold">Tooth #{index + 1}</h3>
-                    <p className="text-sm text-muted-foreground">{tooth.toothType}</p>
-                    <Badge variant={tooth.paid ? "default" : "secondary"}>
-                      {tooth.paid ? 'Paid' : `$${tooth.valueAtLoss.toFixed(2)}`}
-                    </Badge>
-                    {tooth.paid && tooth.paidAt && (
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(tooth.paidAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Current Tooth Value */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Tooth Value</CardTitle>
-            <CardDescription>
-              Each new tooth starts at this value and increases by ${child.priceIncrease.toFixed(2)} when you meet your daily goal!
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-green-600">
-                ${child.currentToothValue.toFixed(2)}
-              </div>
-              <Separator className="my-4" />
-              <div className="text-sm text-muted-foreground">
-                <p>Daily Brush Goal: {child.dailyBrushGoal}x per day</p>
-                <p className="mt-1">Keep brushing to increase your tooth value!</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Transactions */}
-        {child.transactions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {child.transactions.slice(0, 5).map((transaction) => (
-                  <div key={transaction.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{transaction.description}</span>
-                    <span className={`font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.amount >= 0 ? '+' : ''}${transaction.amount.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
     </div>
   )
