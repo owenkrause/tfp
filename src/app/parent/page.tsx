@@ -19,6 +19,8 @@ export default function ParentDashboard() {
       const demoCode = localStorage.getItem("familyDemoCode");
 
       if (!demoCode) {
+        // ensure stale demo code is cleared to avoid redirect loops
+        localStorage.removeItem("familyDemoCode")
         router.push("/setup");
         return;
       }
@@ -34,6 +36,8 @@ export default function ParentDashboard() {
         setFamily(family);
       } catch (error) {
         console.error("Error loading family:", error);
+        // clear possibly invalid demo code then go to setup
+        localStorage.removeItem("familyDemoCode")
         router.push("/setup");
       } finally {
         setLoading(false);

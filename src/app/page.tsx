@@ -6,7 +6,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center p-4">
       <div className="flex gap-6">
         <Link 
-          href="/parent"
+          href="/setup"
           className="hover:scale-105 transition-transform"
         >
           <Image
